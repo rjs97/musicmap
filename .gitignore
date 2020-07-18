@@ -1,0 +1,23 @@
+# dependencies
+*/node_modules/*
+/frontend/.pnp
+/frontend/.pnp.js
+
+# testing
+/frontend/coverage
+
+# production
+/frontend/build
+
+# misc
+.DS_Store
+/frontend/.gitignore
+/frontend/README.md
+*/yarn.lock
+*/package-lock.json
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+testcode/*
