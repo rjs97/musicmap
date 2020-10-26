@@ -1,29 +1,28 @@
 import React from 'react';
 import GraphData from '../components/GraphData'
-import NavButton from '../components/NavButton'
+import Header from '../components/Header'
 import { makeStyles } from '@material-ui/core/styles'
-import Container from '@material-ui/core/Container'
 
-const useStyles = makeStyles({
+const useStyles = makeStyles((theme) => ({
   root: {
-    height: 150,
+    flexGrow: 1,
+    width: '100%'
   },
   content: {
-    display: 'flex',
+    offset: theme.mixins.toolbar
   }
-})
+}))
 
 const Home = () => {
   const classes = useStyles()
   return (
-    <Container maxWidth="lg">
     <div className={classes.root}>
-      <NavButton message={'suggest'} />
-    </div>
+      <Header message={'suggest'} />
     <main className={classes.content}>
       <GraphData />
     </main>
-    </Container>
+    </div>
+
   );
 }
 

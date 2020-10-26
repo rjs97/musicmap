@@ -1,96 +1,96 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { makeStyles } from '@material-ui/core/styles'
-import Accordion from '@material-ui/core/Accordion';
-import AccordionDetails from '@material-ui/core/AccordionDetails'
-import AccordionSummary from '@material-ui/core/AccordionSummary'
 import Card from '@material-ui/core/Card'
-import CardContent from '@material-ui/core/CardContent'
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore'
-import Typography from '@material-ui/core/Typography'
+import Dialog from '@material-ui/core/Dialog'
 import GridList from '@material-ui/core/GridList'
-import ContentStepper from './ContentStepper'
+import GridListTile from '@material-ui/core/GridListTile'
+import GridListTileBar from '@material-ui/core/GridListTileBar'
+import ArtistDialog from './ArtistDialog'
 
 const useStyles = makeStyles({
   card: {
-    minWidth: 300,
+    margin: 10,
     minHeight: '100%',
     maxHeight: '75vh',
     overflow: 'scroll',
-    backgroundColor: 'powderblue',
+    backgroundColor: 'white',
   },
   title: {
-    fontSize: 15,
-  },
-  heading: {
-    fontSize: 13,
-    flexBasis: '75%',
-    flexShrink: 0,
+    fontSize: 20,
   },
   accordion: {
     minHeight: 150,
     overflow: 'hidden'
+  },
+  titleBar: {
+    background:
+      'linear-gradient(to top, rgba(0,0,0,0.7) 0%, ' +
+      'rgba(0,0,0,0.3) 70%, rgba(0,0,0,0) 100%)',
+    fontFamily: 'ubuntu',
+    fontSize: 8
+  },
+  gridList: {
+    cursor: 'pointer'
   }
 });
 
 const Sidebar = ({ name, url, links }) => {
   const classes = useStyles()
-  const [expanded, setExpanded] = React.useState('panel0')
+  const [open, setOpen] = useState(false)
+  const [dialog, setDialog] = useState('')
 
-  useEffect(() => {
-    setExpanded('panel0')
-  }, [links])
-
-  const handleChange = (panel) => (event, isExpanded) => {
-    setExpanded(isExpanded ? panel : false);
+  const findLink = (link) => {
+    if (!links) return
+    const find = links.find((e) => {
+      return (e.target.toLowerCase() === link.toLowerCase())
+    })
+    if (!find) return
+    return find.relationship
   }
 
+  const handleOpen = (e) => {
+    console.log('e.target: ', e.target)
+    setDialog(e.target.alt || e.target.innerText)
+    setOpen(true)
+  }
+
+  const handleClose = () => {
+    setDialog('')
+    setOpen(false)
+  }
+
+  useEffect(() => { console.log('links: ', links)}, [links])
+
   if (name === null || url === null) {
-    return <p>Click on an artist to start</p>
+    return <p style={{ paddingRight: '10vw' }}>click on an artist to start</p>
   }
 
   return (
-    <Card className={classes.card}>
-      <CardContent>
-        <Typography className={classes.title}>
-          {name}
-        </Typography>
-      </CardContent>
-      <CardContent>
-        <Accordion expanded={expanded === 'panel0'} onChange={handleChange('panel0')}>
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-            aria-controls={`panel0bh-content`}
-            id={`panel0bh-header`}
-          >
-            <Typography className={classes.heading}>Listen</Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-          <GridList cols={1}>
-            <iframe src={`https://open.spotify.com/embed/artist/${url}`} width="225" height="200" title={name} frameBorder="0" allowtransparency="true" allow="encrypted-media" />
-          </GridList>
-          </AccordionDetails>
-        </Accordion>
-      </CardContent>
-      <CardContent>
-        { links ?
-          links.map((link, i) => {
-            return (
-              <Accordion expanded={expanded === `panel${i+1}`} onChange={handleChange(`panel${i+1}`)} key={`connection${i+1}`}>
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                aria-controls={`panel${i+1}bh-content`}
-                id={`panel${i+1}bh-header`}
-              >
-                <Typography className={classes.heading}>{link.target === name ? link.source : link.target}</Typography>
-              </AccordionSummary>
-              <AccordionDetails className={classes.accordion}>
-                <ContentStepper rel={link.relationship}/>
-              </AccordionDetails>
-              </Accordion>
-            )
-          }) : null
-        }
-      </CardContent>
+    <Card className={classes.card} square elevation={1}>
+      <h5 className={classes.title}>{name}</h5>
+      <GridList cellHeight={75} spacing={1} cols={(links && (links.length > 1)) ? 2 : 1} className={classes.gridList}>
+      { links ?
+        links.map((link, i) => (
+            <GridListTile key={link.targetImg} onClick={handleOpen}>
+              <img src={link.targetImg} alt={link.target}/>
+              <GridListTileBar
+                title={link.target}
+                titlePosition='bottom'
+                className={classes.titleBar}
+              />
+            </GridListTile>
+          )) : null
+      }
+      </GridList>
+      <Dialog
+          open={open}
+          onClose={handleClose}
+          scroll='body'
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
+        {dialog ? <ArtistDialog artist={name} related={dialog} rel={findLink(dialog)} /> : null}
+        </Dialog>
     </Card>
   )
 }
