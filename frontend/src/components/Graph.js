@@ -45,7 +45,7 @@ const Graph = ({ nodes, links }) => {
         .join('line')
           .attr('class', 'link')
           .attr('stroke-width', d => Math.sqrt(d.relationship.length))
-          .attr('stroke', 'white')
+          .attr('stroke', 'black')
           .attr('x1', d => d.source.x)
           .attr('y1', d => d.source.y)
           .attr('x2', d => d.target.x)
@@ -55,8 +55,9 @@ const Graph = ({ nodes, links }) => {
       link.append('title')
         .text(d => d.relationship.name)
 
-      const groups = svg.append('g')
-        .selectAll('.node')
+      const node = svg.append('g')
+        .attr('class', 'nodes')
+        .selectAll('node')
         .data(nodes)
         .enter().append('g')
         .attr('class', 'node')
@@ -67,19 +68,34 @@ const Graph = ({ nodes, links }) => {
             setData(res.data)
           })
           setName(d.name)
-          svg.selectAll('.link').attr('stroke', e => (e.source.name === d.name || e.target.name === d.name) ? 'yellow' : 'white')
+          svg.selectAll('.link').attr('stroke', e => (e.source.name === d.name || e.target.name === d.name) ? 'thistle' : 'black')
           setUrl(getSpotifyId(d.spotifyUrl))
          })
 
-      groups.append('image')
-        .attr('class', 'circle')
-        .attr('xlink:href', d => d.imageUrl)
-        .attr('width', 30)
-        .attr('height', 30)
-        .attr('x', d => d.x)
-        .attr('y', d => d.y)
+      node.append('circle')
+        .attr('r', 20)
+        .attr('fill', 'white')
+        .attr('stroke', 'white')
+        .style('stroke-width', 0.25)
 
-      groups.append('title')
+      node.append('clipPath')
+        .attr('id', (d, i) => 'clip' + i)
+        .append('circle')
+        .attr('class', 'clip-path')
+        .attr('r', 20)
+
+      nodes.forEach((d, i) => {
+        node.append('image')
+          .attr('xlink:href', d => d.imageUrl)
+          .attr('clip-path', (d, i) => 'url(#clip' + i + ')')
+          .attr('x', -20)
+          .attr('y', -20)
+          .attr('width', 40)
+          .attr('height', 40)
+        node.attr('transform', d => "translate(" + d.x + "," + d.y + ")")
+      })
+
+      node.append('title')
         .text(d => d.name)
 
     }
@@ -88,15 +104,15 @@ const Graph = ({ nodes, links }) => {
   return (
     <Grid container
       direction='row'
-      justify='space-around'
+      justify='center'
       alignItems='center'
-      spacing={5}>
-      <Grid item xs={9}>
-        <Paper style={{ backgroundColor: 'thistle', height: '75vh' }}>
+      spacing={3}>
+      <Grid item xs={6}>
+        <Paper elevation={0} square style={{ backgroundColor: 'white', height: '100%' }}>
           <svg
             className="graph-container"
             width={'100%'}
-            height={'70vh'}
+            height={'90vh'}
             role="img"
             ref={d3svg}
           />
