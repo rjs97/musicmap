@@ -1,0 +1,20 @@
+{
+  "name": "Music Map Clipper",
+  "description": "Grab internet content to populate musicmap.info",
+  "version": "0.0",
+  "permissions": [
+    "contextMenus",
+    "declarativeContent",
+    "tabs",
+    "http:/localhost:8888/*"
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  "page_action": {
+    "default_icon": "icon.png",
+    "default_title": "Click to add video reference"
+  },
+  "manifest_version": 2
+}
