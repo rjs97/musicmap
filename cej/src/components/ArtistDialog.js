@@ -99,7 +99,7 @@ const ArtistDialog = ({ artist, related, rel }) => {
                 allow="encrypted-media"
               />
             </Grid>
-            <Grid item>{rel[activeStep].track.name}</Grid>
+            <Grid item>{rel[activeStep].track.name}</Grid> {/* TODO: add album after you update extension */}
           </Grid>
            : null
         }
