@@ -91,7 +91,7 @@ export default function ExtensionLanding() {
     const body = { artist: artist, related: related, songs: songs, rel: relationship, source: source, quote: quote, title: title}
 
     console.log('posting')
-    axios.post('http://localhost:8888/insert', body)
+    axios.post('https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/insert', body)
       .then(() => {
         history.push('/')
       })
@@ -131,7 +131,7 @@ export default function ExtensionLanding() {
   // }
 
   useEffect(() => {
-    axios.get(`http://localhost:8888/clipped${location.search}`).then((res) => {
+    axios.get(`https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/clipped${location.search}`).then((res) => {
       // TODO: make this loading and do some error checking
       setQuote(res.data.quote)
       setSource(res.data.pageUrl)

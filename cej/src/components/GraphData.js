@@ -7,10 +7,10 @@ const GraphData = () => {
   const [nodes, setNodes] = useState(null)
 
   useEffect(() => {
-    axios.get('http://localhost:8888/link').then(res => {
+    axios.get('https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/link').then(res => {
       setLinks(res.data)
     })
-    axios.get('http://localhost:8888/node').then(res => {
+    axios.get('https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/node').then(res => {
       setNodes(res.data)
     })
   }, [])

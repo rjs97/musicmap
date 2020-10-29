@@ -16,7 +16,7 @@ export default function ArtistSearch({ id, addArtist }) {
       return undefined;
     }
 
-    axios.get(`http://localhost:8888/validate-artist?artist=${encodeURIComponent(inputValue)}}`)
+    axios.get(`https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/validate-artist?artist=${encodeURIComponent(inputValue)}}`)
       .then((res) => {
         const results = res.data
         if (active) {

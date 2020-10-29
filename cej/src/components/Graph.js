@@ -64,7 +64,7 @@ const Graph = ({ nodes, links }) => {
         .attr('fx', d => d.x)
         .attr('fy', d => d.y)
         .on('click', d => {
-          axios.get(`http://localhost:8888/connections?name=${d.name}`).then(res => {
+          axios.get(`https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/connections?name=${d.name}`).then(res => {
             setData(res.data)
           })
           setName(d.name)

@@ -4,7 +4,7 @@ function contextClickHandler (info, tab) {
   var suggestForm = document.createElement('form')
   suggestForm.target = 'SuggestForm'
   suggestForm.method = 'POST'
-  suggestForm.action = 'http://localhost:8888/clipped'
+  suggestForm.action = 'https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/clipped'
 
   if (info.selectionText) {
     var textInput = document.createElement('input')
@@ -40,7 +40,7 @@ function pageClickHandler (tab) {
   var suggestForm = document.createElement('form')
   suggestForm.target = 'SuggestForm'
   suggestForm.method = 'POST'
-  suggestForm.action = 'http://localhost:8888/clipped'
+  suggestForm.action = 'https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/clipped'
 
   var titleInput = document.createElement('input')
   titleInput.type = 'text'

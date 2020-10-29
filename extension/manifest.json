@@ -6,7 +6,8 @@
     "contextMenus",
     "declarativeContent",
     "tabs",
-    "http:/localhost:8888/*"
+    "http:/localhost:8888/*",
+    "https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/*"
   ],
   "background": {
     "scripts": ["background.js"],

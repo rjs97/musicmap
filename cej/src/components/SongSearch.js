@@ -16,7 +16,7 @@ export default function SongSearch({ addSong }) {
       return undefined;
     }
 
-    axios.get(`http://localhost:8888/validate-song?song=${encodeURIComponent(inputValue)}}`)
+    axios.get(`https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/validate-song?song=${encodeURIComponent(inputValue)}}`)
       .then((res) => {
         const results = res.data
         if (active) {
