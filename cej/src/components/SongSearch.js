@@ -66,7 +66,7 @@ export default function SongSearch({ addSong }) {
       renderOption={(option) => (
         <React.Fragment>
           <img src={option.albumUrl} alt={option.songTitle} width={30} height={30} style={{ paddingRight: 10 }}/>
-          {option.songTitle} - {option.artists}
+          {option.songTitle} - {option.artists.map((a) => a.name)}
         </React.Fragment>
       )}
     />

@@ -21,3 +21,13 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+/.firebase
+
+# TEMPORARY FILES TO IGNORE
+src/components/ContentStepper.js
+src/components/CustomInputs.js
+src/components/MoreTabs.js
+src/components/NavBar.js
+src/components/OldSidebar.js
+src/pages/Info.js
