@@ -8,8 +8,8 @@ import Grid from '@material-ui/core/Grid'
 import Chip from '@material-ui/core/Chip'
 import Typography from '@material-ui/core/Typography'
 import Link from '@material-ui/core/Link'
-import SongSearch from './SongSearch'
-import ArtistSearch from './ArtistSearch'
+import SongSearch from '../components/SongSearch'
+import ArtistSearch from '../components/ArtistSearch'
 // import IconButton from '@material-ui/core/IconButton'
 // import AddBoxIcon from '@material-ui/icons/AddBox'
 
@@ -168,13 +168,13 @@ export default function ExtensionLanding() {
       </Grid>
       <Grid item xs={6} container direction='column' alignItems='center' spacing={3}>
         <Grid item>What's the relationship here?</Grid>
-        <Grid item xs><ArtistSearch id={'Artist'} addArtist={val => setArtist(val)} /></Grid>
+        <Grid item><ArtistSearch id={'Artist'} addArtist={val => setArtist(val)} /></Grid>
         <Grid item className={classes.chips} xs>
           {MUSIC_RELATIONSHIPS.map((rel) =>
             (<Chip key={rel.label} label={rel.label} clickable onClick={handleClick}
               color={(rel.value === relationship ? 'primary': 'default')} />))}
         </Grid>
-        <Grid item><ArtistSearch id={'Related'} addArtist={val => setRelated(val)}/></Grid>
+        <Grid item><ArtistSearch id={'Related Artist'} addArtist={val => setRelated(val)}/></Grid>
         <Grid item>
           <Typography>Is a song mentioned?</Typography>
           <Grid container direction="row" justify="center" alignItems="center">

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Switch, Route } from 'react-router-dom'
 
-import ExtensionLanding from '../components/ExtensionLanding'
+import ExtensionLanding from './ExtensionLanding'
 import Home from './Home'
 
 const Main = () => {
