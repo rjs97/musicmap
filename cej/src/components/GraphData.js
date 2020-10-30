@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import Grid from '@material-ui/core/Grid'
 import Graph from './Graph'
 import axios from 'axios'
 
@@ -7,16 +8,18 @@ const GraphData = () => {
   const [nodes, setNodes] = useState(null)
 
   useEffect(() => {
+    let active = true
     axios.get('https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/link').then(res => {
-      setLinks(res.data)
+      if (active) { setLinks(res.data) }
     })
     axios.get('https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/node').then(res => {
-      setNodes(res.data)
+      if (active) { setNodes(res.data) }
     })
+    return () => (active = false)
   }, [])
 
   if (links === null || nodes === null) {
-    return <p>Loading...</p>
+    return <Grid container direction='column' alignItems='center' justify='center'>Loading...</Grid>
   }
 
   return (

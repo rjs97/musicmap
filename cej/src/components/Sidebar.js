@@ -49,7 +49,6 @@ const Sidebar = ({ name, url, links }) => {
   }
 
   const handleOpen = (e) => {
-    console.log('e.target: ', e.target)
     setDialog(e.target.alt || e.target.innerText)
     setOpen(true)
   }
@@ -59,7 +58,7 @@ const Sidebar = ({ name, url, links }) => {
     setOpen(false)
   }
 
-  useEffect(() => { console.log('links: ', links)}, [links])
+  useEffect(() => {}, [links])
 
   if (name === null || url === null) {
     return <p style={{ paddingRight: '10vw' }}>click on an artist to start</p>
@@ -90,7 +89,7 @@ const Sidebar = ({ name, url, links }) => {
           aria-describedby="alert-dialog-description"
         >
         {dialog ? <ArtistDialog artist={name} related={dialog} rel={findLink(dialog)} /> : null}
-        </Dialog>
+      </Dialog>
     </Card>
   )
 }

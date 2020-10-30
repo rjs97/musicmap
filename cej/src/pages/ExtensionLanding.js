@@ -78,8 +78,6 @@ export default function ExtensionLanding() {
   const location = useLocation()
   const history = useHistory()
 
-  let songCount = 0
-
   async function handleSubmit () {
     console.log('so we shall be sending song: ', songs, 'artist: ', artist, 'related: ', related, 'relationship: ', relationship)
 
@@ -184,7 +182,7 @@ export default function ExtensionLanding() {
             </Grid>
             <Grid item><Typography>Yes</Typography></Grid>
           </Grid>
-          {renderSong ? <SongSearch id={songCount} addSong={val => setSongs([val])}/> : null}
+          {renderSong ? <SongSearch id={'Related Track'} addSong={val => setSongs([val])}/> : null}
         </Grid>
         <Button
           className={classes.margin}

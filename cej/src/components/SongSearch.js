@@ -3,7 +3,7 @@ import TextField from '@material-ui/core/TextField';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import axios from 'axios'
 
-export default function SongSearch({ addSong }) {
+export default function SongSearch({ addSong, id }) {
   const [value, setValue] = useState(null);
   const [inputValue, setInputValue] = useState('');
   const [options, setOptions] = useState([]);
@@ -40,13 +40,13 @@ export default function SongSearch({ addSong }) {
     return () => {
       active = false;
     };
-  }, [value, inputValue]);
+  }, [value, inputValue])
 
   return (
     <Autocomplete
       id="song-search"
       style={{ width: 200 }}
-      getOptionLabel={(option) => option.songTitle ? (option.songTitle + ' - ' + option.artists[0]) : option.songTitle}
+      getOptionLabel={(option) => option.songTitle ? (option.songTitle + ' - ' + option.artists[0].name) : option.songTitle}
       filterOptions={(x) => x}
       options={options}
       autoComplete
@@ -61,12 +61,12 @@ export default function SongSearch({ addSong }) {
         setInputValue(newInputValue);
       }}
       renderInput={(params) => (
-        <TextField {...params} label="Related Song" variant="outlined" />
+        <TextField {...params} label={id} variant="outlined" />
       )}
       renderOption={(option) => (
         <React.Fragment>
           <img src={option.albumUrl} alt={option.songTitle} width={30} height={30} style={{ paddingRight: 10 }}/>
-          {option.songTitle} - {option.artists.map((a) => a.name)}
+          {option.songTitle} - {(option.artists.map((a) => a.name + ' '))}
         </React.Fragment>
       )}
     />

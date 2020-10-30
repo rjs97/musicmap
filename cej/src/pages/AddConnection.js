@@ -8,6 +8,8 @@ import ArtistSearch from '../components/ArtistSearch'
 import IconButton from '@material-ui/core/IconButton'
 import ArrowBackIcon from '@material-ui/icons/ArrowBack'
 // import AddBoxIcon from '@material-ui/icons/AddBox'
+import WIPDialog from '../components/WIPDialog'
+import Header from '../components/Header'
 
 import axios from 'axios'
 
@@ -53,6 +55,7 @@ export default function AddConnection() {
   const [type, setType] = useState('')
   const [related, setRelated] = useState(null)
   const [song, setSong] = useState(null)
+  const [open, setOpen] = useState(false)
 
   const classes = useStyles()
   const history = useHistory()
@@ -90,20 +93,20 @@ export default function AddConnection() {
     }
   }
 
-  function RenderSearchType ({ setRelated, setSong }) {
+  function renderSearch () {
     if (type === 'cover') {
       return (
         <Grid container direction='row' justify='center' spacing={3}>
-          <Grid item><SongSearch id={'cover'} addSong={val => setSong(val)} /></Grid>
+          <Grid item><SongSearch id={'Cover Version'} addSong={val => setSong(val)} /></Grid>
           <Grid item><ArtistSearch id={'Covered Artist'} addArtist={val => setRelated(val)} /></Grid>
         </Grid>
       )
     } else if (type === 'track_collab') {
       return (
         <Grid container direction='column' alignItems='center'>
-          <SongSearch id={'cover'} addSong={val => setSong(val)} />
+          <SongSearch id={'Track'} addSong={val => setSong(val)} />
           <p style={{ fontSize: 14 }}> Collaborators: </p>
-          {song ? song.artists.forEach((a) => (<p>a</p>)) : null}
+          {song ? song.artists.map((a) => (<p style={{ fontSize: 11 }} key={a.name}>{a.name}</p>)) : null}
         </Grid>
       )
     } else if (type === 'album_collab') {
@@ -115,17 +118,18 @@ export default function AddConnection() {
 
   return (
     <Grid container alignItems='center' justify='center' spacing={3}>
+      <Grid item style={{ position: 'fixed', top: 0 }}><Header message={'go to map'} link={'/'} /></Grid>
       <p>add a connection</p>
       {(type === '') ?
         <Grid container direction='row' justify='center' spacing={3}>
           <Grid item><Button size='large' color='primary' onClick={() => setType('cover')}>Cover</Button></Grid>
           <Grid item><Button size='large' color='primary' onClick={() => setType('track_collab')}>Track Collab</Button></Grid>
-          <Grid item><Button size='large' color='primary' onClick={() => setType('album_collab')}>Album Collab</Button></Grid>
+          <Grid item><Button size='large' color='primary' onClick={() => setOpen(true)}>Album Collab</Button></Grid>
         </Grid>
         :
         <Grid container direction='column' alignItems='center'>
           <IconButton onClick={() => setType('')}><ArrowBackIcon/></IconButton>
-          <RenderSearchType setRelated={setRelated} setSong={setSong}/>
+          {renderSearch()}
           <Button
             className={classes.margin}
             type='submit'
@@ -137,7 +141,7 @@ export default function AddConnection() {
           </Button>
         </Grid>
       }
-
+      <WIPDialog setOpen={setOpen} open={open} />
     </Grid>
   );
 }
