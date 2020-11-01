@@ -1,5 +1,4 @@
 const express = require('express')
-const { check, validationResult } = require('express-validator')
 const cors = require('cors')
 const mongoose = require('mongoose')
 const bodyParser = require('body-parser')
@@ -10,7 +9,7 @@ var axios = require('axios')
 var app = express()
 const port = 8888
 app.use(express.static(path.join(__dirname, '/public')))
-  .use(cors())
+  .use(cors({ origin: true }))
   .use(bodyParser.urlencoded({ extended: true }))
   .use(bodyParser.json())
 
@@ -146,7 +145,15 @@ async function searchSong (song) {
     let i = 0
     const ret = result.map((res) => {
       i++
-      const artists = res.artists.map((a) => a.name)
+      const artists = res.artists.map((a) => {
+        const spotifyUrl = a.external_urls ? a.external_urls.spotify : ''
+        return {
+          name: a.name,
+          spotifyUrl,
+          href: a.href
+        }
+      })
+
       return {
         _id: i,
         albumTitle: res.album.name,
@@ -312,11 +319,11 @@ app.get('/connections', (req, res) => {
 app.post('/clipped', async (req, res) => {
   const { selected, page, title, tag } = req.body
   if (page.includes('wikipedia')) {
-    res.redirect('http://localhost:3000/failure')
+    res.redirect('https://cotton-eyed-joe.web.app/failure')
   }
 
   const created = await Clipped.create({ quote: selected, pageUrl: page, pageTitle: title, tag })
-  res.redirect(`http://localhost:3000/suggest?id=${created._id}`)
+  res.redirect(`https://cotton-eyed-joe.web.app/suggest?id=${created._id}`)
 })
 
 app.get('/clipped', (req, res) => {
@@ -325,38 +332,6 @@ app.get('/clipped', (req, res) => {
     if (err) console.error(err)
     res.send(clip)
   })
-})
-
-app.get('/update', async (req, res) => {
-  const links = await Link.find({}).exec()
-  for (const link of links) {
-    const targetNode = await Node.findOne({ name: link.target })
-    console.log('updating: ', targetNode.name, link.source)
-    await Link.findOneAndUpdate({ _id: link.id }, { targetImg: targetNode.imageUrl })
-  }
-})
-
-app.get('/update_album', async (req, res) => {
-  const links = await Link.find({}).exec()
-  for (const link of links) {
-    const rels = link.relationship
-    for (let i = 0; i < rels.length; i++) {
-      if (rels[i].track) {
-        const token = await accessSpotify()
-        const response = await axios({
-          method: 'get',
-          url: `https://api.spotify.com/v1/tracks/${rels[i].track.spotifyId}`,
-          headers: {
-            Authorization: 'Bearer ' + token
-          }
-        })
-        console.log('response: ', response)
-      }
-    }
-    // const targetNode = await Node.findOne({ name: link.target })
-    // console.log('updating: ', targetNode.name, link.source)
-    // await Link.findOneAndUpdate({ _id: link.id }, { 'relationship.${i}.track.album': targetNode.imageUrl })
-  }
 })
 
 app.listen(port, () => console.log('listening on port 8888'))

@@ -10,6 +10,7 @@ import ArrowBackIcon from '@material-ui/icons/ArrowBack'
 // import AddBoxIcon from '@material-ui/icons/AddBox'
 import WIPDialog from '../components/WIPDialog'
 import Header from '../components/Header'
+import Switch from '@material-ui/core/Switch'
 
 import axios from 'axios'
 
@@ -56,12 +57,22 @@ export default function AddConnection() {
   const [related, setRelated] = useState(null)
   const [song, setSong] = useState(null)
   const [open, setOpen] = useState(false)
+  const [artist, addArtist] = useState(false)
+  const [artists, setArtists] = useState([])
 
   const classes = useStyles()
   const history = useHistory()
 
+  function handleSwitch () {
+    addArtist(!artist)
+  }
+
+  function updSong (val) {
+    setSong(val)
+    setArtists([...artists, ...val.artists])
+  }
+
   async function handleSubmit () {
-    console.log('type: ', type)
 
     // TODO: make this nicer
     if (song === null) {
@@ -70,15 +81,13 @@ export default function AddConnection() {
     }
 
     if (type === 'cover') {
-      const body = { artists: song.artists, related, song, rel: 'cover'}
-      console.log('cover body: ', body)
+      const body = { artists, related, song, rel: 'cover'}
       axios.post('https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/insert_conn', body)
         .then(() => {
           history.push('/')
         })
     } else if (type === 'track_collab') {
-      const body = { artists: song.artists, song, rel: 'collaborator'}
-      console.log('track body: ', body)
+      const body = { artists, song, rel: 'collaborator'}
       axios.post('https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/insert_conn', body)
         .then(() => {
           history.push('/')
@@ -93,20 +102,42 @@ export default function AddConnection() {
     }
   }
 
+  function renderMore () {
+    return (
+      <Grid container direction='column' alignItems='center' style={{ fontSize: 14 }}>
+      <Grid item>Collaborators:</Grid>
+      <Grid item container direction='row' justify='center' alignItems='center' spacing={3}>
+        {song.artists.map((a) => (
+          <Grid item key={a.name}>{a.name}</Grid>
+        ))}
+      </Grid>
+      <Grid item> Missing a collaborator? </Grid>
+      <Grid item container direction="row" justify="center" alignItems="center">
+        <Grid item>No</Grid>
+        <Grid item>
+          <Switch checked={artist} onChange={handleSwitch} name="renderSong" />
+        </Grid>
+        <Grid item>Yes</Grid>
+      </Grid>
+      <Grid item>{artist ? <ArtistSearch id={'Collaborator'} addArtist={val => setArtists([...artists, val])} /> : null }</Grid>
+      </Grid>
+    )
+
+  }
+
   function renderSearch () {
     if (type === 'cover') {
       return (
         <Grid container direction='row' justify='center' spacing={3}>
-          <Grid item><SongSearch id={'Cover Version'} addSong={val => setSong(val)} /></Grid>
+          <Grid item><SongSearch id={'Cover Version'} addSong={val => updSong(val)} /></Grid>
           <Grid item><ArtistSearch id={'Covered Artist'} addArtist={val => setRelated(val)} /></Grid>
         </Grid>
       )
     } else if (type === 'track_collab') {
       return (
         <Grid container direction='column' alignItems='center'>
-          <SongSearch id={'Track'} addSong={val => setSong(val)} />
-          <p style={{ fontSize: 14 }}> Collaborators: </p>
-          {song ? song.artists.map((a) => (<p style={{ fontSize: 11 }} key={a.name}>{a.name}</p>)) : null}
+          <SongSearch id={'Track'} addSong={val => updSong(val)} />
+          {song ? renderMore() : null}
         </Grid>
       )
     } else if (type === 'album_collab') {

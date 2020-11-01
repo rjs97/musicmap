@@ -273,16 +273,18 @@ app.post('/insert_conn', async (req, res) => {
 
     await Promise.all(artists.map(async (a) => {
       console.log('updating node: ', a.name)
-      const token = await accessSpotify()
-      const artistRes = (await axios({
-        method: 'get',
-        url: a.href,
-        headers: {
-          Authorization: 'Bearer ' + token
-        }
-      })).data
+      if (!a.imageUrl) {
+        const token = await accessSpotify()
+        const artistRes = (await axios({
+          method: 'get',
+          url: a.href,
+          headers: {
+            Authorization: 'Bearer ' + token
+          }
+        })).data
 
-      a.imageUrl = (artistRes.images && artistRes.images[0]) ? artistRes.images[0].url : ''
+        a.imageUrl = (artistRes.images && artistRes.images[0]) ? artistRes.images[0].url : ''
+      }
       await Node.findOneAndUpdate({ name: a.name }, {
         name: a.name,
         spotifyUrl: a.spotifyUrl,
