@@ -142,7 +142,7 @@ export default function ExtensionLanding() {
 
   return (
     <Grid container alignItems='center' spacing={3}>
-      <Grid item xs container>
+      <Grid item container>
         <Card className={classes.card}>
           <CardContent>
             <Grid item container alignItems='center'>
@@ -167,7 +167,7 @@ export default function ExtensionLanding() {
       <Grid item xs={6} container direction='column' alignItems='center' spacing={3}>
         <Grid item>What's the relationship here?</Grid>
         <Grid item><ArtistSearch id={'Artist'} addArtist={val => setArtist(val)} /></Grid>
-        <Grid item className={classes.chips} xs>
+        <Grid item className={classes.chips}>
           {MUSIC_RELATIONSHIPS.map((rel) =>
             (<Chip key={rel.label} label={rel.label} clickable onClick={handleClick}
               color={(rel.value === relationship ? 'primary': 'default')} />))}

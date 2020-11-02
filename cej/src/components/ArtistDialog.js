@@ -36,10 +36,16 @@ const useStyles = makeStyles((theme) => ({
 const MUSIC_RELATIONSHIPS = {
   'collaborator': 'collaborated with',
   'influence': 'influenced',
+  'reference': 'was referenced by',
   'cover': 'was covered by',
   'covered': 'covered',
-  'reference': 'was referenced by'
+  'sample': 'sampled from',
+  'sampled': 'was sampled by',
+  'interpolation': 'was interpolated by',
+  'interpolated': 'interpolated'
 }
+
+const COVER_RELATIONSHIPS = ['cover', 'covered', 'sample', 'sampled', 'interpolation', 'interpolated']
 
 const ArtistDialog = ({ artist, related, rel }) => {
   const classes = useStyles()
@@ -86,7 +92,62 @@ const ArtistDialog = ({ artist, related, rel }) => {
           </Grid>
           <Grid item container xs={4} justify='flex-start'>{artist}</Grid>
         </Grid>
-        {rel[activeStep].track ?
+        {COVER_RELATIONSHIPS.includes(rel[activeStep].name) ?
+          !(rel[activeStep].name.includes('cover')) ?
+          <Grid item container direction='row' justify='center' alignItems='center' className={classes.rel}>
+            <Grid container item direction='column' xs={6} alignItems='center'>
+              <Grid item><iframe
+                src={`https://open.spotify.com/embed/track/${rel[activeStep].track.spotifyId}`}
+                width="80"
+                height="80"
+                title={rel[activeStep].track.name}
+                frameBorder="0"
+                allowtransparency="true"
+                allow="encrypted-media"
+              /></Grid>
+              <Grid item>{rel[activeStep].track.name}</Grid>
+            </Grid>
+            <Grid container item direction='column' xs={6} alignItems='center'>
+              <Grid item><iframe
+                src={`https://open.spotify.com/embed/track/${rel[activeStep].origin_track.spotifyId}`}
+                width="80"
+                height="80"
+                title={rel[activeStep].origin_track.name}
+                frameBorder="0"
+                allowtransparency="true"
+                allow="encrypted-media"
+              /></Grid>
+              <Grid item>{rel[activeStep].origin_track.name}</Grid>
+            </Grid>
+          </Grid> :
+          <Grid container direction='column' alignItems='center'>
+          <Grid item>{rel[activeStep].origin_track.name}</Grid>
+          <Grid item container direction='row' justify='center' alignItems='center' className={classes.rel} spacing={3}>
+            <Grid item>
+              <iframe
+                src={`https://open.spotify.com/embed/track/${rel[activeStep].track.spotifyId}`}
+                width="80"
+                height="80"
+                title={rel[activeStep].track.name}
+                frameBorder="0"
+                allowtransparency="true"
+                allow="encrypted-media"
+              />
+            </Grid>
+            <Grid item>
+              <iframe
+                src={`https://open.spotify.com/embed/track/${rel[activeStep].origin_track.spotifyId}`}
+                width="80"
+                height="80"
+                title={rel[activeStep].origin_track.name}
+                frameBorder="0"
+                allowtransparency="true"
+                allow="encrypted-media"
+              />
+            </Grid>
+          </Grid>
+          </Grid> :
+          (rel[activeStep].track) ?
           <Grid item container direction='row' justify='center' alignItems='center' className={classes.rel} spacing={3}>
             <Grid item>
               <iframe

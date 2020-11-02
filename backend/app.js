@@ -27,6 +27,12 @@ var linkSchema = new Schema({
     track: {
       name: String,
       spotifyId: String,
+      album: String,
+      link: String
+    },
+    origin_track: {
+      name: String,
+      spotifyId: String,
       album: String
     },
     ref: {
@@ -54,6 +60,12 @@ var clippedSchema = new Schema({
 const Link = mongoose.model('Link', linkSchema, 'link')
 const Node = mongoose.model('Node', nodeSchema, 'node')
 const Clipped = mongoose.model('Clipped', clippedSchema, 'clipped')
+
+const COVER_RELATIONSHIPS = {
+  cover: 'covered',
+  sample: 'sampled',
+  interpolation: 'interpolated'
+}
 
 // SPOTIFY CODE
 const clientId = '<insert client id>'
@@ -265,21 +277,168 @@ app.post('/insert', async (req, res) => {
   }
 })
 
-// TODO: do this client side / we're gonna change this entirely
-app.post('/verify', [
-  check('artist').exists({ checkFalsy: true }).isString(),
-  check('related').exists({ checkFalsy: true }).isString(),
-  check('relationship').exists({ checkFalsy: true }).isString(),
-  check('source').optional({ checkFalsy: true }).isURL(),
-  check('song').optional({ checkFalsy: true }).isString()
-], (req, res) => {
-  const errors = validationResult(req)
-  if (!errors.isEmpty()) {
-    const fields = []
-    errors.errors.forEach(err => fields.push(err.param))
-    return res.status(400).json({ fields })
-  } else {
-    return res.sendStatus(200)
+app.post('/insert_collab', async (req, res) => {
+  try {
+    const { artists, related, rel, song, album } = req.body
+
+    await Promise.all(artists.map(async (a) => {
+      console.log('updating node: ', a.name)
+      if (!a.imageUrl) {
+        const token = await accessSpotify()
+        const artistRes = (await axios({
+          method: 'get',
+          url: a.href,
+          headers: {
+            Authorization: 'Bearer ' + token
+          }
+        })).data
+
+        a.imageUrl = (artistRes.images && artistRes.images[0]) ? artistRes.images[0].url : ''
+      }
+      await Node.findOneAndUpdate({ name: a.name }, {
+        name: a.name,
+        spotifyUrl: a.spotifyUrl,
+        imageUrl: a.imageUrl
+      }, { upsert: true, new: true, useFindAndModify: false }).exec()
+    }))
+
+    if (related) {
+      console.log('updating related node: ', related)
+      await Node.findOneAndUpdate({ name: related.name }, {
+        name: related.name,
+        spotifyUrl: related.spotifyUrl,
+        imageUrl: related.imageUrl
+      }, { upsert: true, new: true, useFindAndModify: false }).exec()
+    }
+
+    if (song) {
+      if (related && rel === 'cover') {
+        artists.forEach((a) => {
+          console.log('updating link: ', a.name, related.name)
+          Link.findOneAndUpdate({ source: a.name, target: related.name },
+            {
+              $setOnInsert: { source: a.name, target: related.name, targetImg: related.imageUrl },
+              $addToSet: {
+                relationship: {
+                  name: 'cover',
+                  track: { name: song.songTitle, spotifyId: song.spotifyId, album: song.albumTitle }
+                }
+              }
+            },
+            { upsert: true, new: true, useFindAndModify: false })
+            .exec((err, conn) => {
+              if (err) console.error(err)
+            })
+
+          Link.findOneAndUpdate({ source: related.name, target: a.name },
+            {
+              $setOnInsert: { source: related.name, target: a.name, targetImg: a.imageUrl },
+              $addToSet: {
+                relationship: {
+                  name: 'covered',
+                  track: { name: song.songTitle, spotifyId: song.spotifyId, album: song.albumTitle }
+                }
+              }
+            },
+            { upsert: true, new: true, useFindAndModify: false })
+            .exec((err, conn) => {
+              if (err) console.error(err)
+            })
+        })
+      } else {
+        artists.forEach((a) => {
+          artists.forEach((b) => {
+            if (a.name === b.name) { return }
+            console.log('adding ab link: ', a.name, b.name)
+            Link.findOneAndUpdate({ source: a.name, target: b.name },
+              {
+                $setOnInsert: { source: a.name, target: b.name, targetImg: b.imageUrl },
+                $addToSet: {
+                  relationship: {
+                    name: rel,
+                    track: { name: song.songTitle, spotifyId: song.spotifyId, album: song.albumTitle }
+                  }
+                }
+              },
+              { upsert: true, new: true, useFindAndModify: false })
+              .exec((err, conn) => {
+                if (err) console.error(err)
+              })
+          })
+        })
+      }
+    } else if (album) {
+      console.log('album search not implemented yet!')
+    }
+    res.send('OK')
+  } catch (err) {
+    console.error(err)
+  }
+})
+
+app.post('/insert_cover', async (req, res) => {
+  try {
+    const { artists, originSong, song, rel } = req.body
+
+    console.log('all fields: ', req.body)
+
+    await Promise.all(artists.map(async (a) => {
+      console.log('updating node: ', a.name)
+      if (!a.imageUrl) {
+        const token = await accessSpotify()
+        const artistRes = (await axios({
+          method: 'get',
+          url: a.href,
+          headers: {
+            Authorization: 'Bearer ' + token
+          }
+        })).data
+        a.imageUrl = (artistRes.images && artistRes.images[0]) ? artistRes.images[0].url : ''
+      }
+      await Node.findOneAndUpdate({ name: a.name }, {
+        name: a.name,
+        spotifyUrl: a.spotifyUrl,
+        imageUrl: a.imageUrl
+      }, { upsert: true, new: true, useFindAndModify: false }).exec()
+    }))
+    song.artists.forEach((a) => {
+      originSong.artists.forEach((b) => {
+        Link.findOneAndUpdate({ source: a.name, target: b.name },
+          {
+            $setOnInsert: { source: a.name, target: b.name, targetImg: (artists.find((ar) => ar.name === b.name)).imageUrl },
+            $addToSet: {
+              relationship: {
+                name: rel,
+                track: { name: song.songTitle, spotifyId: song.spotifyId, album: song.albumTitle },
+                origin_track: { name: originSong.songTitle, spotifyId: originSong.spotifyId, album: originSong.albumTitle }
+              }
+            }
+          },
+          { upsert: true, new: true, useFindAndModify: false })
+          .exec((err, conn) => {
+            if (err) console.error(err)
+          })
+
+        Link.findOneAndUpdate({ source: b.name, target: a.name },
+          {
+            $setOnInsert: { source: b.name, target: a.name, targetImg: (artists.find((ar) => ar.name === a.name)).imageUrl },
+            $addToSet: {
+              relationship: {
+                name: COVER_RELATIONSHIPS[rel],
+                track: { name: song.songTitle, spotifyId: song.spotifyId, album: song.albumTitle },
+                origin_track: { name: originSong.songTitle, spotifyId: originSong.spotifyId, album: originSong.albumTitle }
+              }
+            }
+          },
+          { upsert: true, new: true, useFindAndModify: false })
+          .exec((err, conn) => {
+            if (err) console.error(err)
+          })
+      })
+    })
+    res.send('OK')
+  } catch (err) {
+    console.error(err)
   }
 })
 
