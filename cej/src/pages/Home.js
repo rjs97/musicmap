@@ -9,10 +9,10 @@ import MobileDialog from '../components/MobileDialog'
 const useStyles = makeStyles((theme) => ({
   root: {
     flexGrow: 1,
-    width: '100%'
+    width: '80%'
   },
   content: {
-    offset: theme.mixins.toolbar
+    marginTop: 30
   }
 }))
 
