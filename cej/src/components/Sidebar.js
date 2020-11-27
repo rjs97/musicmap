@@ -5,7 +5,7 @@ import Dialog from '@material-ui/core/Dialog'
 import GridList from '@material-ui/core/GridList'
 import GridListTile from '@material-ui/core/GridListTile'
 import GridListTileBar from '@material-ui/core/GridListTileBar'
-import ArtistDialog from './ArtistDialog'
+import ConnDialog from './ConnDialog'
 
 const useStyles = makeStyles({
   card: {
@@ -88,7 +88,7 @@ const Sidebar = ({ name, url, links }) => {
           aria-labelledby="alert-dialog-title"
           aria-describedby="alert-dialog-description"
         >
-        {dialog ? <ArtistDialog artist={name} related={dialog} id={findId(dialog)} /> : null}
+        {dialog ? <ConnDialog artist={name} related={dialog} id={findId(dialog)} /> : null}
       </Dialog>
     </Card>
   )

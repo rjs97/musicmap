@@ -49,7 +49,7 @@ const MUSIC_RELATIONSHIPS = {
 
 const YOUTUBE_REGEX = new RegExp('^(https?://)?(www.)?(youtube.com|youtu.?be)/.+$')
 
-const ArtistDialog = ({ artist, related, id }) => {
+const ConnDialog = ({ artist, related, id }) => {
   const classes = useStyles()
   const [data, setData] = useState(null)
   const [activeStep, setActiveStep] = useState(0)
@@ -244,4 +244,4 @@ const ArtistDialog = ({ artist, related, id }) => {
   )
 }
 
-export default ArtistDialog
+export default ConnDialog
