@@ -39,13 +39,13 @@ const Sidebar = ({ name, url, links }) => {
   const [open, setOpen] = useState(false)
   const [dialog, setDialog] = useState('')
 
-  const findLink = (link) => {
+  const findId = (link) => {
     if (!links) return
     const find = links.find((e) => {
       return (e.target.toLowerCase() === link.toLowerCase())
     })
     if (!find) return
-    return find.relationship
+    return find._id
   }
 
   const handleOpen = (e) => {
@@ -58,7 +58,7 @@ const Sidebar = ({ name, url, links }) => {
     setOpen(false)
   }
 
-  useEffect(() => {}, [links])
+  useEffect(() => {}, [links]) // TODO: update loading (sometimes artists are in sidebar for too long)
 
   if (name === null || url === null) {
     return <p style={{ paddingRight: '10vw' }}>click on an artist to start</p>
@@ -88,7 +88,7 @@ const Sidebar = ({ name, url, links }) => {
           aria-labelledby="alert-dialog-title"
           aria-describedby="alert-dialog-description"
         >
-        {dialog ? <ArtistDialog artist={name} related={dialog} rel={findLink(dialog)} /> : null}
+        {dialog ? <ArtistDialog artist={name} related={dialog} id={findId(dialog)} /> : null}
       </Dialog>
     </Card>
   )

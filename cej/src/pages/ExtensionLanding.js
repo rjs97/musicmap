@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useLocation, useHistory } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { makeStyles } from '@material-ui/core/styles'
 import Button from '@material-ui/core/Button'
 import Card from '@material-ui/core/Card'
@@ -76,11 +76,9 @@ export default function ExtensionLanding() {
 
   const classes = useStyles()
   const location = useLocation()
-  const history = useHistory()
+  // const history = useHistory()
 
   async function handleSubmit () {
-    console.log('so we shall be sending song: ', songs, 'artist: ', artist, 'related: ', related, 'relationship: ', relationship)
-
     // TODO: make this nicer
     if (artist === '' || related === '' || relationship === '' || (renderSong && songs.length === 0)) {
       alert('You must fill out each field')
@@ -88,11 +86,12 @@ export default function ExtensionLanding() {
 
     const body = { artist: artist, related: related, songs: songs, rel: relationship, source: source, quote: quote, title: title}
 
-    console.log('posting')
-    axios.post('https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/insert', body)
-      .then(() => {
-        history.push('/')
-      })
+    console.log('posting ', body)
+    alert('currently disabled, sorry')
+    // axios.post('https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/insert', body)
+    //   .then(() => {
+    //     history.push('/')
+    //   })
   }
 
   function handleClick (e) {

@@ -1,6 +1,5 @@
 const express = require('express')
 const functions = require('firebase-functions')
-const { check, validationResult } = require('express-validator')
 const cors = require('cors')
 const mongoose = require('mongoose')
 const bodyParser = require('body-parser')
@@ -24,26 +23,7 @@ var linkSchema = new Schema({
   source: String,
   target: String,
   targetImg: String,
-  relationship: [{
-    name: String,
-    track: {
-      name: String,
-      spotifyId: String,
-      album: String,
-      link: String
-    },
-    origin_track: {
-      name: String,
-      spotifyId: String,
-      album: String
-    },
-    ref: {
-      quote: String,
-      title: String,
-      url: String
-    },
-    _id: false
-  }]
+  strength: Number
 })
 
 var nodeSchema = new Schema({
@@ -58,6 +38,56 @@ var clippedSchema = new Schema({
   pageTitle: String,
   tag: String
 })
+
+var coverSchema = new Schema({
+  linkId: String,
+  type: String,
+  track: {
+    name: String,
+    album: String,
+    artists: [String],
+    src: String,
+    id: String
+  },
+  origTrack: {
+    name: String,
+    album: String, // optional for YT
+    artists: [String], // missing for YT rn
+    src: String,
+    id: String
+  },
+  addlRef: [String] // optional
+})
+
+var refSchema = new Schema({
+  linkId: String,
+  quote: String, // optional
+  src: String,
+  title: String,
+  type: String, // influence or reference
+  content: {
+    name: String,
+    album: String, // optional for albums && artists
+    artists: [String], // optional for artists
+    src: String,
+    id: String
+  }
+})
+
+var collabSchema = new Schema({
+  linkId: String,
+  content: {
+    name: String,
+    album: String, // optional for albums
+    artists: [String],
+    src: String,
+    id: String
+  }
+})
+
+const Collab = mongoose.model('Collab', collabSchema, 'collab')
+const Cover = mongoose.model('Cover', coverSchema, 'cover')
+const Ref = mongoose.model('Ref', refSchema, 'ref')
 
 const Link = mongoose.model('Link', linkSchema, 'link')
 const Node = mongoose.model('Node', nodeSchema, 'node')
@@ -97,6 +127,57 @@ async function accessSpotify () {
 
   } catch (err) {
     console.error('spotify auth error: ', err)
+    return null
+  }
+}
+
+async function searchAlbum (album) {
+  try {
+    const token = await accessSpotify()
+    const response = await axios({
+      method: 'get',
+      url: 'https://api.spotify.com/v1/search',
+      headers: {
+        Authorization: 'Bearer ' + token
+      },
+      params: {
+        q: album,
+        type: 'album',
+        limit: 5
+      }
+    })
+
+    if (response.data.albums.length === 0) return null
+
+    const result = response.data.albums.items
+
+    let i = 0
+    const ret = result.map((res) => {
+      i++
+      const artists = res.artists.map((a) => {
+        const spotifyUrl = a.external_urls ? a.external_urls.spotify : ''
+        return {
+          name: a.name,
+          spotifyUrl,
+          href: a.href
+        }
+      })
+
+      const spotifyUrl = res.external_urls ? res.external_urls.spotify : ''
+      const imageUrl = (res.images && res.images[0]) ? res.images[0].url : ''
+      return {
+        _id: i,
+        name: res.name,
+        artists,
+        spotifyId: res.id,
+        spotifyUrl,
+        imageUrl
+      }
+    })
+
+    return ret.filter((r) => r.imageUrl !== '')
+  } catch (err) {
+    console.error('spotify album search error: ', err)
     return null
   }
 }
@@ -173,13 +254,15 @@ async function searchSong (song) {
         }
       })
 
+      const spotifyUrl = res.external_urls ? res.external_urls.spotify : ''
       return {
         _id: i,
         albumTitle: res.album.name,
         albumUrl: res.album.images[0].url,
-        songTitle: res.name,
+        name: res.name,
         artists: artists,
-        spotifyId: res.id
+        spotifyId: res.id,
+        spotifyUrl
       }
     })
 
@@ -204,250 +287,155 @@ app.get('/link', (req, res) => {
   })
 })
 
-app.post('/insert', async (req, res) => {
+app.post('/insert-collab', async (req, res) => {
   try {
-    const { artist, related, rel, quote, source, title, songs } = req.body
+    const { artists, content } = req.body
 
-    await Node.findOneAndUpdate({ name: artist.name }, {
-      name: artist.name,
-      spotifyUrl: artist.spotifyUrl,
-      imageUrl: artist.imageUrl
-    }, { upsert: true, new: true, useFindAndModify: false }).exec()
+    // make sure all the artists nodes exist
+    await Promise.all(artists.map(async (a) => {
+      if (!a.imageUrl) {
+        const token = await accessSpotify()
+        const artistRes = (await axios({
+          method: 'get',
+          url: a.href,
+          headers: {
+            Authorization: 'Bearer ' + token
+          }
+        })).data
 
-    await Node.findOneAndUpdate({ name: related.name }, {
-      name: related.name,
-      spotifyUrl: related.spotifyUrl,
-      imageUrl: related.imageUrl
-    }, { upsert: true, new: true, useFindAndModify: false }).exec()
+        a.imageUrl = (artistRes.images && artistRes.images[0]) ? artistRes.images[0].url : ''
+      }
+      await Node.findOneAndUpdate({ name: a.name }, {
+        name: a.name,
+        spotifyUrl: a.spotifyUrl,
+        imageUrl: a.imageUrl
+      }, { upsert: true, new: true, useFindAndModify: false }).exec()
+    }))
 
-    let ref = null
-    if (quote) {
-      ref = { quote, title, url: source }
-    } else {
-      ref = { title, url: source }
-    }
+    artists.forEach((a) => {
+      artists.forEach(async (b) => {
+        if (a.name === b.name) { return }
 
-    const updates = []
-    if (songs.length > 0) {
-      songs.forEach((song) => {
-        updates.push({
-          name: rel,
-          track: {
-            name: song.songTitle,
-            spotifyId: song.spotifyId,
-            album: song.albumTitle
-          },
-          ref
-        })
-      })
-    } else {
-      updates.push({ name: rel, ref })
-    }
-
-    updates.forEach((update) => {
-      Link.findOneAndUpdate({ source: artist.name, target: related.name },
-        {
-          $setOnInsert: { source: artist.name, target: related.name, targetImg: related.imageUrl },
-          $addToSet: { relationship: update }
+        const link = await Link.findOneAndUpdate({ source: a.name, target: b.name }, {
+          $setOnInsert: {
+            source: a.name,
+            target: b.name,
+            targetImg: (artists.find((ar) => ar.name === b.name)).imageUrl,
+            strength: 0
+          }
         },
-        { upsert: true, new: true, useFindAndModify: false })
-        .exec((err, conn) => {
-          if (err) console.error(err)
-        })
+        { upsert: true, new: true, useFindAndModify: false }).exec()
 
-      if (rel === 'collaborator') { // bidirectional relationship
-        Link.findOneAndUpdate({ source: related.name, target: artist.name },
-          {
-            $setOnInsert: { source: related.name, target: artist.name, targetImg: artist.imageUrl },
-            $addToSet: { relationship: update }
-          },
-          { upsert: true, new: true, useFindAndModify: false })
-          .exec((err, conn) => {
-            if (err) console.error(err)
-          })
-      } else if (rel === 'cover') { // bidirectional relationship
-        update.name = 'covered'
-        Link.findOneAndUpdate({ source: related.name, target: artist.name },
-          {
-            $setOnInsert: { source: related.name, target: artist.name, targetImg: artist.imageUrl },
-            $addToSet: { relationship: update }
-          },
-          { upsert: true, new: true, useFindAndModify: false })
-          .exec((err, conn) => {
-            if (err) console.error(err)
-          })
-      }
-    })
+        const update = {
+          name: content.name,
+          artists: content.artists.map((a) => a.name),
+          src: content.spotifyUrl,
+          id: content.spotifyId
+        }
 
-    res.send('OK')
-  } catch (err) {
-    console.error(err)
-  }
-})
+        if (content.albumTitle) {
+          update.album = content.albumTitle
+        }
 
-app.post('/insert_collab', async (req, res) => {
-  try {
-    const { artists, related, rel, song, album } = req.body
+        const res = await Collab.findOneAndUpdate({ linkId: link._id, 'content.id': update.id },
+          { linkId: link._id, content: update }, { upsert: true, rawResult: true, new: true, useFindAndModify: false })
 
-    await Promise.all(artists.map(async (a) => {
-      console.log('updating node: ', a.name)
-      if (!a.imageUrl) {
-        const token = await accessSpotify()
-        const artistRes = (await axios({
-          method: 'get',
-          url: a.href,
-          headers: {
-            Authorization: 'Bearer ' + token
-          }
-        })).data
-
-        a.imageUrl = (artistRes.images && artistRes.images[0]) ? artistRes.images[0].url : ''
-      }
-      await Node.findOneAndUpdate({ name: a.name }, {
-        name: a.name,
-        spotifyUrl: a.spotifyUrl,
-        imageUrl: a.imageUrl
-      }, { upsert: true, new: true, useFindAndModify: false }).exec()
-    }))
-
-    if (related) {
-      console.log('updating related node: ', related)
-      await Node.findOneAndUpdate({ name: related.name }, {
-        name: related.name,
-        spotifyUrl: related.spotifyUrl,
-        imageUrl: related.imageUrl
-      }, { upsert: true, new: true, useFindAndModify: false }).exec()
-    }
-
-    if (song) {
-      if (related && rel === 'cover') {
-        artists.forEach((a) => {
-          console.log('updating link: ', a.name, related.name)
-          Link.findOneAndUpdate({ source: a.name, target: related.name },
-            {
-              $setOnInsert: { source: a.name, target: related.name, targetImg: related.imageUrl },
-              $addToSet: {
-                relationship: {
-                  name: 'cover',
-                  track: { name: song.songTitle, spotifyId: song.spotifyId, album: song.albumTitle }
-                }
-              }
-            },
-            { upsert: true, new: true, useFindAndModify: false })
-            .exec((err, conn) => {
-              if (err) console.error(err)
-            })
-
-          Link.findOneAndUpdate({ source: related.name, target: a.name },
-            {
-              $setOnInsert: { source: related.name, target: a.name, targetImg: a.imageUrl },
-              $addToSet: {
-                relationship: {
-                  name: 'covered',
-                  track: { name: song.songTitle, spotifyId: song.spotifyId, album: song.albumTitle }
-                }
-              }
-            },
-            { upsert: true, new: true, useFindAndModify: false })
-            .exec((err, conn) => {
-              if (err) console.error(err)
-            })
-        })
-      } else {
-        artists.forEach((a) => {
-          artists.forEach((b) => {
-            if (a.name === b.name) { return }
-            console.log('adding ab link: ', a.name, b.name)
-            Link.findOneAndUpdate({ source: a.name, target: b.name },
-              {
-                $setOnInsert: { source: a.name, target: b.name, targetImg: b.imageUrl },
-                $addToSet: {
-                  relationship: {
-                    name: rel,
-                    track: { name: song.songTitle, spotifyId: song.spotifyId, album: song.albumTitle }
-                  }
-                }
-              },
-              { upsert: true, new: true, useFindAndModify: false })
-              .exec((err, conn) => {
-                if (err) console.error(err)
-              })
-          })
-        })
-      }
-    } else if (album) {
-      console.log('album search not implemented yet!')
-    }
-    res.send('OK')
-  } catch (err) {
-    console.error(err)
-  }
-})
-
-app.post('/insert_cover', async (req, res) => {
-  try {
-    const { artists, originSong, song, rel } = req.body
-
-    console.log('all fields: ', req.body)
-
-    await Promise.all(artists.map(async (a) => {
-      console.log('updating node: ', a.name)
-      if (!a.imageUrl) {
-        const token = await accessSpotify()
-        const artistRes = (await axios({
-          method: 'get',
-          url: a.href,
-          headers: {
-            Authorization: 'Bearer ' + token
-          }
-        })).data
-        a.imageUrl = (artistRes.images && artistRes.images[0]) ? artistRes.images[0].url : ''
-      }
-      await Node.findOneAndUpdate({ name: a.name }, {
-        name: a.name,
-        spotifyUrl: a.spotifyUrl,
-        imageUrl: a.imageUrl
-      }, { upsert: true, new: true, useFindAndModify: false }).exec()
-    }))
-    song.artists.forEach((a) => {
-      originSong.artists.forEach((b) => {
-        Link.findOneAndUpdate({ source: a.name, target: b.name },
-          {
-            $setOnInsert: { source: a.name, target: b.name, targetImg: (artists.find((ar) => ar.name === b.name)).imageUrl },
-            $addToSet: {
-              relationship: {
-                name: rel,
-                track: { name: song.songTitle, spotifyId: song.spotifyId, album: song.albumTitle },
-                origin_track: { name: originSong.songTitle, spotifyId: originSong.spotifyId, album: originSong.albumTitle }
-              }
-            }
-          },
-          { upsert: true, new: true, useFindAndModify: false })
-          .exec((err, conn) => {
-            if (err) console.error(err)
-          })
-
-        Link.findOneAndUpdate({ source: b.name, target: a.name },
-          {
-            $setOnInsert: { source: b.name, target: a.name, targetImg: (artists.find((ar) => ar.name === a.name)).imageUrl },
-            $addToSet: {
-              relationship: {
-                name: COVER_RELATIONSHIPS[rel],
-                track: { name: song.songTitle, spotifyId: song.spotifyId, album: song.albumTitle },
-                origin_track: { name: originSong.songTitle, spotifyId: originSong.spotifyId, album: originSong.albumTitle }
-              }
-            }
-          },
-          { upsert: true, new: true, useFindAndModify: false })
-          .exec((err, conn) => {
-            if (err) console.error(err)
-          })
+        if (!res.lastErrorObject.updatedExisting) {
+          await Link.findOneAndUpdate({ source: a.name, target: b.name }, { $inc: { strength: 1 } }, { useFindAndModify: false })
+        }
       })
     })
     res.send('OK')
   } catch (err) {
     console.error(err)
   }
+})
+
+app.post('/insert-cover', async (req, res) => {
+  try {
+    const { artists, origSong, song, rel } = req.body
+
+    // make sure all the artists nodes exist
+    await Promise.all(artists.map(async (a) => {
+      if (!a.imageUrl) {
+        const token = await accessSpotify()
+        const artistRes = (await axios({
+          method: 'get',
+          url: a.href,
+          headers: {
+            Authorization: 'Bearer ' + token
+          }
+        })).data
+        a.imageUrl = (artistRes.images && artistRes.images[0]) ? artistRes.images[0].url : ''
+      }
+      await Node.findOneAndUpdate({ name: a.name }, {
+        name: a.name,
+        spotifyUrl: a.spotifyUrl,
+        imageUrl: a.imageUrl
+      }, { upsert: true, new: true, useFindAndModify: false }).exec()
+    }))
+
+    song.artists.forEach((a) => {
+      origSong.artists.forEach(async (b) => {
+        if (a.name === b.name) { return }
+
+        const link = await Link.findOneAndUpdate({ source: a.name, target: b.name }, {
+          $setOnInsert: {
+            source: a.name,
+            target: b.name,
+            targetImg: (artists.find((ar) => ar.name === b.name)).imageUrl,
+            strength: 0
+          }
+        },
+        { upsert: true, new: true, useFindAndModify: false }).exec()
+
+        const revLink = await Link.findOneAndUpdate({ source: b.name, target: a.name }, {
+          $setOnInsert: {
+            source: b.name,
+            target: a.name,
+            targetImg: (artists.find((ar) => ar.name === a.name)).imageUrl,
+            strength: 0
+          }
+        },
+        { upsert: true, new: true, useFindAndModify: false }).exec()
+
+        const origTrack = {
+          name: origSong.name,
+          album: origSong.albumTitle,
+          artists: origSong.artists.map((ar) => ar.name),
+          id: origSong.spotifyId
+        }
+
+        const track = {
+          name: song.name,
+          album: song.albumTitle,
+          artists: song.artists.map((ar) => ar.name),
+          id: song.spotifyId
+        }
+
+        const cover = await Cover.findOneAndUpdate({ linkId: link._id, 'track.id': track.id },
+          { linkId: link._id, type: rel, origTrack, track }, { upsert: true, new: true, rawResult: true, useFindAndModify: false })
+        if (!cover.lastErrorObject.updatedExisting) {
+          await Link.findOneAndUpdate({ _id: cover.linkId }, { $inc: { strength: 1 } }, { useFindAndModify: false })
+        }
+
+        const revCover = await Cover.findOneAndUpdate({ linkId: revLink._id, 'track.id': track.id },
+          { linkId: revLink._id, type: COVER_RELATIONSHIPS[rel], origTrack, track }, { upsert: true, new: true, rawResult: true, useFindAndModify: false })
+        if (!revCover.lastErrorObject.updatedExisting) {
+          await Link.findOneAndUpdate({ _id: revCover.linkId }, { $inc: { strength: 1 } }, { useFindAndModify: false })
+        }
+      })
+    })
+    res.send('OK')
+  } catch (err) {
+    console.error(err)
+  }
+})
+
+app.get('/validate-album', async (req, res) => {
+  if (req.query.album === '') return
+  const results = await searchAlbum(req.query.album.replace(/[“”‘’''""]/g, ''))
+  res.send(results)
 })
 
 app.get('/validate-artist', async (req, res) => {
@@ -462,24 +450,34 @@ app.get('/validate-song', async (req, res) => {
   res.send(results)
 })
 
-app.get('/connections', (req, res) => {
+app.get('/connections', async (req, res) => {
   if (req.query.name === '') return
   // return links in order of descending strength
-  Link.aggregate([
-    { $match: { source: req.query.name } },
+  const data = await Link.aggregate([
+    { $match: { source: req.query.name, strength: { $gt: 0 } } },
     {
       $project: {
         source: true,
         target: true,
-        relationship: true,
         targetImg: true,
-        strength: { $size: '$relationship' }
+        strength: true
       }
     },
     { $sort: { strength: -1 } }
-  ]).exec((err, data) => {
-    if (err) console.error(err)
-    res.send(data)
+  ]).exec()
+  res.send(data)
+})
+
+app.get('/relationships', async (req, res) => {
+  if (req.query.id === '') return
+  const covers = await Cover.find({ linkId: req.query.id }).exec()
+  const refs = await Ref.find({ linkId: req.query.id }).exec()
+  const collabs = await Collab.find({ linkId: req.query.id }).exec()
+
+  res.send({
+    cover: covers,
+    ref: refs,
+    collab: collabs
   })
 })
 

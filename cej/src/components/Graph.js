@@ -36,7 +36,8 @@ const Graph = ({ nodes, links }) => {
         .stop()
 
       simulation.tick(300)
-      const link = svg.append('g')
+
+      svg.append('g')
           .attr('stroke', '#999')
           .attr('stroke-opacity', 0.6)
         .selectAll('.link')
@@ -44,16 +45,13 @@ const Graph = ({ nodes, links }) => {
         .data(links)
         .join('line')
           .attr('class', 'link')
-          .attr('stroke-width', d => Math.sqrt(d.relationship.length))
+          .attr('stroke-width', d => Math.sqrt(d.strength))
           .attr('stroke', 'black')
           .attr('x1', d => d.source.x)
           .attr('y1', d => d.source.y)
           .attr('x2', d => d.target.x)
           .attr('y2', d => d.target.y)
         .on('click', d => console.log(d))
-
-      link.append('title')
-        .text(d => d.relationship.name)
 
       const node = svg.append('g')
         .attr('class', 'nodes')
