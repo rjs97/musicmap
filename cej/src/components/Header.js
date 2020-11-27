@@ -66,9 +66,17 @@ export default function Header ({ message, link }) {
         <Link href={'/info'}><IconButton><HelpOutlineIcon /></IconButton></Link>
       </Grid>
       </Grid>
-       :
+       : (path.pathname === '/add') ?
        <Grid item container xs={4} justify='flex-end'>
          <Link href={'/info'}><IconButton><HelpOutlineIcon /></IconButton></Link>
+       </Grid> :
+       <Grid item container xs={4} spacing={3} alignItems='center' justify='flex-end'>
+         <Link href={link}>
+           <Button
+             id="link-button"
+             className={classes.button}
+           >go to map</Button>
+         </Link>
        </Grid>
       }
     </Grid>

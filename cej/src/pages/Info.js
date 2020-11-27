@@ -29,7 +29,7 @@ const Info = () => {
 
   return (
      <div className={classes.root}>
-      <Header message={'back to map'} link={'/map'}/>
+      <Header message={'add connection'} link={'/map'}/>
       <Grid item container direction='column' justify='center'>
       <Grid item className={classes.title}>
         FAQ
@@ -51,8 +51,8 @@ const Info = () => {
         a map of musical influences. Whenever I see interviews, I think it's really
         sweet how much artists draw inspiration from one another, and I wanted
         a way to easily record those relationships. For example, here's a nice quote from a
-        Phoebe Bridgers interview with Sirius XM about her collaborations with
-        other artists, which are numerous (Monday Mixtape, November 9, 2020): <br/>
+        Phoebe Bridgers interview with Sirius XM about her numerous collaborations with
+        other artists (Monday Mixtape, November 9, 2020): <br/>
         <Grid item style={{ marginLeft: '5%', fontSize: 12, fontStyle: 'italic', paddingTop: 10 }}>"How beautiful is it that I found Julien, and I found Lucy and I found Conor Oberst,
         and Matt Berninger, and all these people, where the way that we connect is putting out our
         darkest stuff"</Grid>
@@ -62,7 +62,7 @@ const Info = () => {
       </Grid>
       <Grid item className={classes.content}>
         If you would like to add a connection to the map, you can click
-        on the "Add Connection" button and walk through the steps there. If you, like me, enjoy
+        on the <Link href='/add'>"Add Connection"</Link> button and walk through the steps there. If you, like me, enjoy
         reading artist interviews and finding out who they draw influence from, you can
         quoted influence connections by downloading and using the extension <Link href='/info'>here</Link> (link will
         become active once published on the Chrome store). From the extension, you can also add
