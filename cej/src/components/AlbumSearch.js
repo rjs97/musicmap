@@ -4,7 +4,7 @@ import Autocomplete from '@material-ui/lab/Autocomplete'
 import CircularProgress from '@material-ui/core/CircularProgress'
 import axios from 'axios'
 
-export default function SongSearch({ addSong, id }) {
+export default function AlbumSearch({ addAlbum, id }) {
   const [value, setValue] = useState(null)
   const [inputValue, setInputValue] = useState('')
   const [options, setOptions] = useState([])
@@ -23,7 +23,7 @@ export default function SongSearch({ addSong, id }) {
       return undefined
     }
 
-    axios.get(`https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/validate-song?song=${encodeURIComponent(inputValue)}}`)
+    axios.get(`https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/validate-album?album=${encodeURIComponent(inputValue)}}`)
       .then((res) => {
         const results = res.data
         if (active) {
@@ -41,19 +41,19 @@ export default function SongSearch({ addSong, id }) {
         }
       })
       .catch((error) => {
-        console.log('SONG SEARCH ERROR: ', error)
+        console.log('ALBUM SEARCH ERROR: ', error)
       })
 
     return () => {
       active = false
     }
-  }, [value, inputValue, loading])
+  }, [value, inputValue])
 
   return (
     <Autocomplete
-      id="song-search"
+      id="album-search"
       style={{ width: 200 }}
-      getOptionLabel={(option) => (option.name + ' - ' + option.artists.map((a) => a.name + ' '))}
+      getOptionLabel={(option) => option.name}
       filterOptions={(x) => x}
       options={options}
       autoComplete
@@ -65,7 +65,7 @@ export default function SongSearch({ addSong, id }) {
       onChange={(event, newValue) => {
         setOptions(newValue ? [newValue, ...options] : options)
         setValue(newValue)
-        addSong(newValue)
+        addAlbum(newValue)
       }}
       onInputChange={(event, newInputValue) => {
         setInputValue(newInputValue)
@@ -88,7 +88,7 @@ export default function SongSearch({ addSong, id }) {
       )}
       renderOption={(option) => (
         <React.Fragment>
-          <img src={option.albumUrl} alt={option.name} width={30} height={30} style={{ paddingRight: 10 }}/>
+          <img src={option.imageUrl} alt={option.name} width={30} height={30} style={{ paddingRight: 10 }}/>
           {option.name} - {(option.artists.map((a) => a.name + ' '))}
         </React.Fragment>
       )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Grid from '@material-ui/core/Grid'
 import Graph from './Graph'
+import CircularProgress from '@material-ui/core/CircularProgress'
 import axios from 'axios'
 
 const GraphData = () => {
@@ -19,7 +20,7 @@ const GraphData = () => {
   }, [])
 
   if (links === null || nodes === null) {
-    return <Grid container direction='column' alignItems='center' justify='center'>Loading...</Grid>
+    return <Grid container direction='column' alignItems='center' justify='center'><CircularProgress style={{ marginTop: '20%' }} size={40}/></Grid>
   }
 
   return (
