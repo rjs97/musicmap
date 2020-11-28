@@ -1,18 +1,22 @@
 import React, { useState, useEffect } from 'react'
 import { makeStyles } from '@material-ui/core/styles'
-import { useHistory } from 'react-router-dom'
+import { useParams, useHistory } from 'react-router-dom'
 import Button from '@material-ui/core/Button'
 import Chip from '@material-ui/core/Chip'
-import DialogContent from '@material-ui/core/DialogContent'
 import Grid from '@material-ui/core/Grid'
 import CircularProgress from '@material-ui/core/CircularProgress'
-import KeyboardArrowLeft from '@material-ui/icons/KeyboardArrowLeft';
-import KeyboardArrowRight from '@material-ui/icons/KeyboardArrowRight';
+import KeyboardArrowLeft from '@material-ui/icons/KeyboardArrowLeft'
+import KeyboardArrowRight from '@material-ui/icons/KeyboardArrowRight'
 import Link from '@material-ui/core/Link'
 import MobileStepper from '@material-ui/core/MobileStepper'
+import Header from '../components/Header'
 import axios from 'axios'
 
 const useStyles = makeStyles((theme) => ({
+  root: {
+    flexGrow: 1,
+    width: '80%',
+  },
   rel: {
     fontFamily: 'ubuntu',
     color: 'slategrey',
@@ -50,17 +54,22 @@ const MUSIC_RELATIONSHIPS = {
 
 const YOUTUBE_REGEX = new RegExp('^(https?://)?(www.)?(youtube.com|youtu.?be)/.+$')
 
-const ConnDialog = ({ artist, related, linkid }) => {
+const RelPage = () => {
   const classes = useStyles()
   const [data, setData] = useState(null)
   const [activeStep, setActiveStep] = useState(0)
   const [totalSteps, setTotal] = useState(0)
+  const [artist, setArtist] = useState('')
+  const [related, setRelated] = useState('')
 
+  const { linkid } = useParams()
   const history = useHistory()
 
   useEffect(() => {
     axios.get(`https://us-central1-cotton-eyed-joe.cloudfunctions.net/widgets/relationships?linkId=${linkid}`).then(res => {
       const pages = (!!res.data.collab.length) + res.data.cover.length + res.data.ref.length
+      setArtist(res.data.artist)
+      setRelated(res.data.related)
       setTotal(pages)
       setData(res.data)
     })
@@ -216,10 +225,11 @@ const ConnDialog = ({ artist, related, linkid }) => {
   }
 
   return (
-    <DialogContent>
+    <Grid container className={classes.root}>
+      <Header message={'go to map'} link={'/'}/>
       { data ?
         <Grid container alignItems='center' justify='center' spacing={3} direction='column'>
-          <Grid item><Link href={`/conn/${linkid}`}>
+          <Grid item>
             <MobileStepper
               steps={totalSteps}
               position='static'
@@ -236,15 +246,15 @@ const ConnDialog = ({ artist, related, linkid }) => {
                 </Button>
               }
             />
-          </Link></Grid>
+          </Grid>
           { ((activeStep - !!data.collab.length - data.cover.length) < 0) ?
               ((activeStep - !!data.collab.length) < 0) ?
                 (!!data.collab.length ? renderCollab() : null)
                 : renderCover(activeStep - !!data.collab.length) : renderRef(activeStep - !!data.collab.length - data.cover.length) }
         </Grid>
         : <CircularProgress /> }
-    </DialogContent>
+    </Grid>
   )
 }
 
-export default ConnDialog
+export default RelPage

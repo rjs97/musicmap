@@ -88,7 +88,7 @@ const Sidebar = ({ name, url, links }) => {
           aria-labelledby="alert-dialog-title"
           aria-describedby="alert-dialog-description"
         >
-        {dialog ? <ConnDialog artist={name} related={dialog} id={findId(dialog)} /> : null}
+        {dialog ? <ConnDialog artist={name} related={dialog} linkid={findId(dialog)} /> : null}
       </Dialog>
     </Card>
   )

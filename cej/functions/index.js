@@ -469,16 +469,35 @@ app.get('/connections', async (req, res) => {
 })
 
 app.get('/relationships', async (req, res) => {
-  if (req.query.id === '') return
-  const covers = await Cover.find({ linkId: req.query.id }).exec()
-  const refs = await Ref.find({ linkId: req.query.id }).exec()
-  const collabs = await Collab.find({ linkId: req.query.id }).exec()
+  if (req.query.linkId === '') return
+  const link = await Link.findOne({ _id: req.query.linkId }).exec()
+  const response = {
+    artist: link.source,
+    related: link.target
+  }
 
-  res.send({
-    cover: covers,
-    ref: refs,
-    collab: collabs
-  })
+  if (req.query.type) {
+    if (req.query.type === 'collab') {
+      console.log('sending collab')
+      response.collab = await Collab.find({ linkId: req.query.linkId }).exec()
+    }
+    if (req.query.id === '') return
+    if (req.query.type === 'cover') {
+      console.log('sending cover')
+      response.cover = await Cover.findOne({ _id: req.query.id }).exec()
+    } else if (req.query.type === 'ref') {
+      console.log('sending ref')
+      response.ref = await Ref.findOne({ _id: req.query.id }).exec()
+    } else {
+      // throw error
+    }
+  } else {
+    response.cover = await Cover.find({ linkId: req.query.linkId }).exec()
+    response.ref = await Ref.find({ linkId: req.query.linkId }).exec()
+    response.collab = await Collab.find({ linkId: req.query.linkId }).exec()
+  }
+
+  res.send(response)
 })
 
 app.post('/clipped', async (req, res) => {
